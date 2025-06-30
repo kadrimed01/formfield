@@ -673,6 +673,12 @@
                     // Load this data into pdf-lib
                     const pdfDoc = await PDFDocument.load(existingPdfBytes);
 
+                    // A placeholder image icon (camera icon) as a Base64 string
+                    const placeholderImageBase64 = 'iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHISURBVGhD7ZpBaoQwEEX/Cg7iLejS3+BDD5CoPcGX3sErOEJw495b6Bo8gA7gRfsyE5M0SSYkTWz4Q5LwZDbZ/f/M7M4G6I/j+L5EkeRms/mBEMLzbrf7gMfj8X8ghDDG2P3Y7/c/AsAggx/4h4aGhp6mafrwer1/L+v6/b7PZDJ+73a7f/P5/H8ghE4sFvPdbhf8ejweD0ql0v2+v5+bmzrJsq4IwnsQgrjZbIqZ2Wz2kGU5jFisfgshhBDC/wM+oFKpBNOgUCj8BMAnzM/P9+fn5/8M+IS2trYis/b29v8b8AkAg8Gg2Wy2XywW/yYAgEqlIpfLpVgs/k0AAMMwzWbzN01T/g0AAMuyjD/7/f43AABGRkaIer1eL5fL/g0AAG1tbZLf7/83AADLsizLsmzb9v2+v5+amppkWRcE4T0IQVwstqg38P2+z2Qy/u52u3/z+fzvQQj9c7lcWZb1er1+bTab/Tf+7wF8wGaz+Z1Op/8BfMAnzM/P9+fn5/8M+IS2trYis/b29v8b8AkAg8Gg2Wy2XywW/yYAgEqlIpfLpVgs/k0AAMMwzWbzN01T/g0AAGVZ1t/v/zcAAEZGRoh6vV4vl8v+DQAA29vbJb/f/28AAJdlWZZl2bZt2/f7/n5qaqpEURSGYRgMBoPBYDAYDAaDwWAwGAwGg8FgMBgMBoPBYDAYDAaDwWAwGAwGg8FgMBgMBoPBYDAYDAaDwWAwGAwGg8FgMBgMBgP+C/4B3iSklqgCPUcAAAAASUVORK5CYII=';
+                    const placeholderImageBytes = Uint8Array.from(atob(placeholderImageBase64), c => c.charCodeAt(0));
+                    const placeholderImage = await pdfDoc.embedPng(placeholderImageBytes);
+
+
                     const pages = pdfDoc.getPages();
                     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
@@ -708,8 +714,6 @@
                                 break;
                             case 'image':
                                 const imageButton = form.createButton(field.id);
-                                // **FINAL FIX**: Simplified the button creation to its most basic, robust form.
-                                // Removed the caption and font properties which can cause conflicts.
                                 imageButton.addToPage(page, { 
                                     x: pdfX, 
                                     y: pdfY, 
@@ -718,7 +722,8 @@
                                     borderWidth: 1, 
                                     borderColor: rgb(0.5, 0.5, 0.5) 
                                 });
-                                imageButton.onPush(pdfDoc.createJavaScript('event.target.buttonImportIcon();'));
+                                // Set the embedded placeholder as the button's appearance
+                                imageButton.setImage(placeholderImage);
                                 break;
                         }
                     }
