@@ -3,10 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Form Builder</title>
+    <title>Interactive PDF Form Builder</title>
+    <!-- pdf.js for rendering PDF files in the browser -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- pdf-lib.js for creating and modifying PDF documents -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
     <style>
+        /* General Styles */
         * {
             margin: 0;
             padding: 0;
@@ -18,183 +21,223 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
+            color: #333;
         }
 
+        /* Main container for the application */
         .container {
             max-width: 1400px;
             margin: 0 auto;
             background: white;
             border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
             overflow: hidden;
         }
 
+        /* Header section */
         .header {
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white;
-            padding: 30px;
+            padding: 40px;
             text-align: center;
+            position: relative;
         }
 
         .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            font-weight: 700;
+            font-size: 2.8rem;
+            margin-bottom: 15px;
+            font-weight: 800;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
+            font-size: 1.2rem;
+            opacity: 0.95;
         }
 
+        /* Main content area layout */
         .main-content {
             display: flex;
-            min-height: 600px;
+            min-height: 700px;
         }
 
+        /* Sidebar for controls and tools */
         .sidebar {
-            width: 300px;
+            width: 320px;
             background: #f8f9fa;
-            border-right: 1px solid #e9ecef;
+            border-right: 1px solid #dee2e6;
             padding: 30px;
+            box-shadow: inset 5px 0 15px rgba(0,0,0,0.05);
         }
 
-        .upload-section {
-            margin-bottom: 30px;
-        }
-
+        /* File upload area */
         .upload-area {
             border: 3px dashed #4facfe;
-            border-radius: 15px;
-            padding: 30px;
+            border-radius: 20px;
+            padding: 40px 20px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s ease;
-            background: white;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: #fff;
         }
 
-        .upload-area:hover {
+        .upload-area:hover, .upload-area.dragover {
             border-color: #00f2fe;
-            background: #f0f9ff;
-        }
-
-        .upload-area.dragover {
-            border-color: #00f2fe;
-            background: #e0f2fe;
+            background: rgba(79, 172, 254, 0.05);
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(79, 172, 254, 0.2);
         }
 
         .upload-icon {
-            font-size: 3rem;
+            font-size: 4rem;
             color: #4facfe;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
         }
 
         .file-input {
             display: none;
         }
 
+        /* Tools section for form fields */
         .tools-section h3 {
-            color: #333;
-            margin-bottom: 20px;
-            font-size: 1.3rem;
+            color: #2c3e50;
+            margin-bottom: 25px;
+            font-size: 1.4rem;
+            font-weight: 700;
+            text-align: center;
+            position: relative;
+        }
+
+        .tools-section h3::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            border-radius: 2px;
         }
 
         .tool-buttons {
             display: grid;
-            gap: 10px;
+            gap: 15px;
         }
 
         .tool-btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 15px;
-            border-radius: 10px;
+            padding: 18px 20px;
+            border-radius: 15px;
             cursor: pointer;
             font-weight: 600;
+            font-size: 15px;
             transition: all 0.3s ease;
-            font-size: 14px;
+            text-align: left;
         }
-
+        
         .tool-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
         }
 
         .tool-btn.active {
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.5);
+            transform: translateY(-2px);
         }
 
+        /* Download button section */
         .download-section {
-            margin-top: 30px;
+            margin-top: 40px;
             padding-top: 30px;
-            border-top: 1px solid #e9ecef;
+            border-top: 2px solid #dee2e6;
         }
 
         .download-btn {
             background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
             color: white;
             border: none;
-            padding: 15px 30px;
-            border-radius: 10px;
+            padding: 20px 30px;
+            border-radius: 15px;
             cursor: pointer;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 16px;
             width: 100%;
             transition: all 0.3s ease;
         }
 
         .download-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(17, 153, 142, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(17, 153, 142, 0.4);
         }
 
         .download-btn:disabled {
-            background: #ccc;
+            background: #bdc3c7;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
         }
 
+        /* Canvas area for displaying the PDF */
         .canvas-container {
             flex: 1;
             padding: 30px;
             overflow: auto;
-            background: #f8f9fa;
+            background: #e9ecef;
+            position: relative;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            display: inline-block; /* Important for positioning overlays */
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
         }
 
         .pdf-canvas {
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
-            cursor: crosshair;
-            background: white;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            margin: 0 auto;
             display: block;
         }
 
+        /* Overlay for visually representing a form field */
         .field-overlay {
             position: absolute;
-            border: 2px solid #4facfe;
-            background: rgba(79, 172, 254, 0.1);
+            border: 2px solid rgba(79, 172, 254, 0.8);
+            background: rgba(79, 172, 254, 0.2);
             cursor: move;
-            border-radius: 4px;
+            border-radius: 5px;
+            transition: background 0.2s ease;
         }
 
         .field-overlay:hover {
-            border-color: #00f2fe;
-            background: rgba(0, 242, 254, 0.2);
+            background: rgba(0, 242, 254, 0.3);
+        }
+        
+        /* Temporary selection box for drawing */
+        .selection-box {
+            position: absolute;
+            border: 2px dashed #007bff;
+            background-color: rgba(0, 123, 255, 0.1);
+            pointer-events: none; /* Let mouse events pass through */
         }
 
         .field-label {
             position: absolute;
             top: -25px;
             left: 0;
-            background: #4facfe;
+            background: #2c3e50;
             color: white;
             padding: 4px 8px;
-            border-radius: 4px;
+            border-radius: 5px;
             font-size: 12px;
             font-weight: 600;
             white-space: nowrap;
@@ -202,23 +245,35 @@
 
         .delete-btn {
             position: absolute;
-            top: -10px;
-            right: -10px;
+            top: -12px;
+            right: -12px;
             background: #ff4757;
             color: white;
             border: none;
             border-radius: 50%;
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             cursor: pointer;
-            font-size: 12px;
-            display: none;
+            font-size: 14px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            opacity: 0;
         }
-
+        
         .field-overlay:hover .delete-btn {
-            display: block;
+            opacity: 1;
         }
 
+        .delete-btn:hover {
+            background: #e02d3b;
+            transform: scale(1.1);
+        }
+
+        /* Page navigation controls */
         .page-controls {
             text-align: center;
             margin-bottom: 20px;
@@ -233,75 +288,58 @@
             cursor: pointer;
             margin: 0 10px;
             font-weight: 600;
+            transition: background 0.2s ease;
         }
 
-        .page-btn:hover {
+        .page-btn:hover:not(:disabled) {
             background: #5a67d8;
         }
 
         .page-btn:disabled {
-            background: #ccc;
+            background: #bdc3c7;
             cursor: not-allowed;
         }
 
         .page-info {
             margin: 0 20px;
-            font-weight: 600;
-            color: #333;
+            font-weight: 700;
+            color: #2c3e50;
         }
 
-        .status {
+        /* Status message bar */
+        #status {
             padding: 15px;
-            margin: 20px 0;
+            margin: 0 0 20px 0;
             border-radius: 8px;
             text-align: center;
             font-weight: 600;
+            display: none; /* Initially hidden */
         }
 
-        .status.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+        .status.success { background-color: #d4edda; color: #155724; }
+        .status.error { background-color: #f8d7da; color: #721c24; }
+        .status.info { background-color: #d1ecf1; color: #0c5460; }
+        
+        .field-type-icon {
+            margin-right: 10px;
+            font-size: 16px;
         }
 
-        .status.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .status.info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
-
-        .canvas-wrapper {
-            position: relative;
-            display: inline-block;
-            margin: 0 auto;
-        }
-
+        /* Responsive design for smaller screens */
         @media (max-width: 768px) {
-            .main-content {
-                flex-direction: column;
-            }
-            
-            .sidebar {
-                width: 100%;
-            }
-            
-            .header h1 {
-                font-size: 2rem;
-            }
+            body { padding: 10px; }
+            .main-content { flex-direction: column; }
+            .sidebar { width: 100%; border-right: none; border-left: none; }
+            .header h1 { font-size: 2.2rem; }
+            .canvas-container { padding: 15px; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>PDF Form Builder</h1>
-            <p>Upload your PDF and add interactive form fields with ease</p>
+            <h1>🎨 Interactive Form Builder</h1>
+            <p>Upload your PDF, add form fields, and download it as an interactive, fillable form.</p>
         </div>
         
         <div class="main-content">
@@ -309,37 +347,38 @@
                 <div class="upload-section">
                     <div class="upload-area" id="uploadArea">
                         <div class="upload-icon">📄</div>
-                        <p><strong>Click to upload</strong> or drag & drop your PDF</p>
+                        <p><strong>Click to Upload</strong> or drag and drop a PDF here</p>
                         <input type="file" id="fileInput" class="file-input" accept=".pdf">
                     </div>
                 </div>
                 
                 <div class="tools-section">
-                    <h3>Form Tools</h3>
+                    <h3>🛠️ Form Tools</h3>
                     <div class="tool-buttons">
-                        <button class="tool-btn" data-tool="text">📝 Text Field</button>
-                        <button class="tool-btn" data-tool="radio">🔘 Radio Button</button>
-                        <button class="tool-btn" data-tool="checkbox">☑️ Checkbox</button>
-                        <button class="tool-btn" data-tool="date">📅 Date Picker</button>
-                        <button class="tool-btn" data-tool="image">🖼️ Image Placeholder</button>
-                        <button class="tool-btn" data-tool="signature">✍️ Signature Field</button>
+                        <button class="tool-btn" data-tool="text"><span class="field-type-icon">📝</span>Text Field</button>
+                        <button class="tool-btn" data-tool="image"><span class="field-type-icon">🖼️</span>Image Field</button>
+                        <button class="tool-btn" data-tool="checkbox"><span class="field-type-icon">☑️</span>Checkbox</button>
+                        <button class="tool-btn" data-tool="radioGroup"><span class="field-type-icon">🔘</span>Radio Group</button>
+                        <button class="tool-btn" data-tool="signature"><span class="field-type-icon">✍️</span>Signature Field</button>
                     </div>
                 </div>
                 
                 <div class="download-section">
-                    <button class="download-btn" id="downloadBtn" disabled>📥 Download Fillable PDF</button>
+                    <button class="download-btn" id="downloadBtn" disabled>
+                        📥 Download Interactive PDF
+                    </button>
                 </div>
             </div>
             
-            <div class="canvas-container">
+            <div class="canvas-container" id="canvasContainer">
                 <div id="status"></div>
                 <div class="page-controls" id="pageControls" style="display: none;">
-                    <button class="page-btn" id="prevPage">← Previous</button>
-                    <span class="page-info" id="pageInfo">Page 1 of 1</span>
+                    <button class="page-btn" id="prevPage">← Prev</button>
+                    <span class="page-info" id="pageInfo"></span>
                     <button class="page-btn" id="nextPage">Next →</button>
                 </div>
                 <div class="canvas-wrapper" id="canvasWrapper">
-                    <canvas id="pdfCanvas" class="pdf-canvas"></canvas>
+                    <canvas id="pdfCanvas"></canvas>
                 </div>
             </div>
         </div>
@@ -348,63 +387,76 @@
     <script>
         class PDFFormBuilder {
             constructor() {
-                this.pdfDoc = null;
+                // PDF state
+                this.pdfDoc = null; // This will be the pdf.js document object
                 this.currentPage = 1;
                 this.totalPages = 0;
                 this.scale = 1.5;
+
+                // Drawing and fields state
                 this.selectedTool = null;
                 this.isDrawing = false;
-                this.startX = 0;
-                this.startY = 0;
-                this.fields = [];
+                this.startPos = { x: 0, y: 0 };
+                this.fields = []; // Stores all field data
                 this.fieldCounter = 0;
+                this.selectionBox = null; // The temporary DIV for drawing
                 
+                // DOM Elements
+                this.canvas = document.getElementById('pdfCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.canvasWrapper = document.getElementById('canvasWrapper');
+                this.downloadBtn = document.getElementById('downloadBtn');
+
+                // Initialize the application
                 this.initializeEventListeners();
-                this.showStatus('Upload a PDF file to get started', 'info');
+                this.showStatus('Welcome! Upload a PDF to get started.', 'info');
             }
             
+            // Sets up all event listeners for the UI
             initializeEventListeners() {
-                // File upload
                 const uploadArea = document.getElementById('uploadArea');
                 const fileInput = document.getElementById('fileInput');
                 
+                // File Upload Events
                 uploadArea.addEventListener('click', () => fileInput.click());
-                uploadArea.addEventListener('dragover', this.handleDragOver.bind(this));
+                uploadArea.addEventListener('dragover', e => this.handleDrag(e, true));
+                uploadArea.addEventListener('dragleave', e => this.handleDrag(e, false));
                 uploadArea.addEventListener('drop', this.handleDrop.bind(this));
                 fileInput.addEventListener('change', this.handleFileSelect.bind(this));
                 
-                // Tool selection
+                // Tool Selection
                 document.querySelectorAll('.tool-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        this.selectTool(e.target.dataset.tool);
-                    });
+                    btn.addEventListener('click', () => this.selectTool(btn.dataset.tool));
                 });
                 
-                // Canvas events
-                const canvas = document.getElementById('pdfCanvas');
-                canvas.addEventListener('mousedown', this.handleMouseDown.bind(this));
-                canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
-                canvas.addEventListener('mouseup', this.handleMouseUp.bind(this));
+                // Use canvasWrapper for mouse events to draw correctly over the canvas
+                this.canvasWrapper.addEventListener('mousedown', this.handleMouseDown.bind(this));
+                window.addEventListener('mousemove', this.handleMouseMove.bind(this));
+                window.addEventListener('mouseup', this.handleMouseUp.bind(this));
                 
-                // Page controls
+                // Page Navigation
                 document.getElementById('prevPage').addEventListener('click', () => this.changePage(-1));
                 document.getElementById('nextPage').addEventListener('click', () => this.changePage(1));
                 
-                // Download
-                document.getElementById('downloadBtn').addEventListener('click', this.downloadPDF.bind(this));
+                // Download PDF
+                this.downloadBtn.addEventListener('click', this.downloadPDF.bind(this));
             }
-            
-            handleDragOver(e) {
+
+            // --- File Handling ---
+
+            handleDrag(e, isOver) {
                 e.preventDefault();
-                e.currentTarget.classList.add('dragover');
+                e.currentTarget.classList.toggle('dragover', isOver);
             }
-            
+
             handleDrop(e) {
                 e.preventDefault();
                 e.currentTarget.classList.remove('dragover');
-                const files = e.dataTransfer.files;
-                if (files.length > 0 && files[0].type === 'application/pdf') {
-                    this.loadPDF(files[0]);
+                const file = e.dataTransfer.files[0];
+                if (file && file.type === 'application/pdf') {
+                    this.loadPDF(file);
+                } else {
+                    this.showStatus('Please drop a valid PDF file.', 'error');
                 }
             }
             
@@ -417,315 +469,291 @@
             
             async loadPDF(file) {
                 try {
-                    this.showStatus('Loading PDF...', 'info');
-                    
+                    this.showStatus('Loading and rendering PDF...', 'info');
                     const arrayBuffer = await file.arrayBuffer();
+                    
+                    // Use pdf.js to load the document
                     const loadingTask = pdfjsLib.getDocument(arrayBuffer);
-                    this.pdfDoc = await loadingTask.promise;
+                    this.pdfDoc = await loadingTask.promise; // Store the pdf.js document object
                     this.totalPages = this.pdfDoc.numPages;
                     this.currentPage = 1;
                     this.fields = [];
+                    this.fieldCounter = 0;
                     
                     await this.renderPage();
                     this.updatePageControls();
-                    document.getElementById('downloadBtn').disabled = false;
+                    this.downloadBtn.disabled = false;
                     
-                    this.showStatus(`PDF loaded successfully! ${this.totalPages} page(s) found.`, 'success');
+                    this.showStatus(`PDF loaded successfully! Total pages: ${this.totalPages}`, 'success');
                 } catch (error) {
                     console.error('Error loading PDF:', error);
-                    this.showStatus('Error loading PDF. Please try a different file.', 'error');
+                    this.showStatus('Failed to load PDF. Please try another file.', 'error');
                 }
             }
-            
+
+            // --- PDF Page Rendering ---
+
             async renderPage() {
                 if (!this.pdfDoc) return;
                 
+                this.canvas.style.cursor = 'wait';
                 const page = await this.pdfDoc.getPage(this.currentPage);
                 const viewport = page.getViewport({ scale: this.scale });
                 
-                const canvas = document.getElementById('pdfCanvas');
-                const context = canvas.getContext('2d');
+                this.canvas.height = viewport.height;
+                this.canvas.width = viewport.width;
                 
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
-                
-                const renderContext = {
-                    canvasContext: context,
-                    viewport: viewport
-                };
-                
+                const renderContext = { canvasContext: this.ctx, viewport: viewport };
                 await page.render(renderContext).promise;
-                this.renderFields();
+                
+                this.renderFieldsForCurrentPage();
+                this.canvas.style.cursor = this.selectedTool ? 'crosshair' : 'default';
             }
-            
-            renderFields() {
-                // Clear existing field overlays
-                document.querySelectorAll('.field-overlay').forEach(el => el.remove());
-                
-                // Render fields for current page
-                this.fields.filter(field => field.page === this.currentPage).forEach(field => {
-                    this.createFieldOverlay(field);
-                });
-            }
-            
-            createFieldOverlay(field) {
-                const overlay = document.createElement('div');
-                overlay.className = 'field-overlay';
-                overlay.style.left = field.x + 'px';
-                overlay.style.top = field.y + 'px';
-                overlay.style.width = field.width + 'px';
-                overlay.style.height = field.height + 'px';
-                
-                const label = document.createElement('div');
-                label.className = 'field-label';
-                label.textContent = this.getFieldTypeLabel(field.type);
-                overlay.appendChild(label);
-                
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'delete-btn';
-                deleteBtn.innerHTML = '×';
-                deleteBtn.addEventListener('click', () => this.deleteField(field.id));
-                overlay.appendChild(deleteBtn);
-                
-                document.getElementById('canvasWrapper').appendChild(overlay);
-            }
-            
-            getFieldTypeLabel(type) {
-                const labels = {
-                    text: 'Text Field',
-                    radio: 'Radio Button',
-                    checkbox: 'Checkbox',
-                    date: 'Date Field',
-                    image: 'Image Field',
-                    signature: 'Signature Field'
-                };
-                return labels[type] || type;
-            }
-            
-            selectTool(tool) {
-                this.selectedTool = tool;
-                document.querySelectorAll('.tool-btn').forEach(btn => {
-                    btn.classList.remove('active');
-                });
-                document.querySelector(`[data-tool="${tool}"]`).classList.add('active');
-                
-                const canvas = document.getElementById('pdfCanvas');
-                canvas.style.cursor = 'crosshair';
-            }
-            
-            handleMouseDown(e) {
-                if (!this.selectedTool || !this.pdfDoc) return;
-                
-                this.isDrawing = true;
-                const rect = e.target.getBoundingClientRect();
-                this.startX = e.clientX - rect.left;
-                this.startY = e.clientY - rect.top;
-            }
-            
-            handleMouseMove(e) {
-                if (!this.isDrawing) return;
-                
-                // Visual feedback could be added here
-            }
-            
-            handleMouseUp(e) {
-                if (!this.isDrawing || !this.selectedTool) return;
-                
-                this.isDrawing = false;
-                const rect = e.target.getBoundingClientRect();
-                const endX = e.clientX - rect.left;
-                const endY = e.clientY - rect.top;
-                
-                const width = Math.abs(endX - this.startX);
-                const height = Math.abs(endY - this.startY);
-                
-                if (width > 10 && height > 10) {
-                    const field = {
-                        id: ++this.fieldCounter,
-                        type: this.selectedTool,
-                        page: this.currentPage,
-                        x: Math.min(this.startX, endX),
-                        y: Math.min(this.startY, endY),
-                        width: width,
-                        height: height
-                    };
-                    
-                    this.fields.push(field);
-                    this.createFieldOverlay(field);
-                    this.showStatus(`${this.getFieldTypeLabel(this.selectedTool)} added successfully!`, 'success');
-                }
-            }
-            
-            deleteField(fieldId) {
-                this.fields = this.fields.filter(field => field.id !== fieldId);
-                this.renderFields();
-                this.showStatus('Field deleted successfully!', 'success');
-            }
-            
-            changePage(direction) {
-                const newPage = this.currentPage + direction;
-                if (newPage >= 1 && newPage <= this.totalPages) {
+
+            changePage(delta) {
+                const newPage = this.currentPage + delta;
+                if (newPage > 0 && newPage <= this.totalPages) {
                     this.currentPage = newPage;
                     this.renderPage();
                     this.updatePageControls();
                 }
             }
-            
+
             updatePageControls() {
-                if (this.totalPages > 1) {
-                    document.getElementById('pageControls').style.display = 'block';
+                const pageControls = document.getElementById('pageControls');
+                if (this.totalPages > 0) {
+                    pageControls.style.display = 'block';
                     document.getElementById('pageInfo').textContent = `Page ${this.currentPage} of ${this.totalPages}`;
                     document.getElementById('prevPage').disabled = this.currentPage === 1;
                     document.getElementById('nextPage').disabled = this.currentPage === this.totalPages;
                 } else {
-                    document.getElementById('pageControls').style.display = 'none';
+                    pageControls.style.display = 'none';
                 }
             }
-            
+
+            // --- Tool and Field Management ---
+
+            selectTool(tool) {
+                this.selectedTool = this.selectedTool === tool ? null : tool;
+                
+                document.querySelectorAll('.tool-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.tool === this.selectedTool);
+                });
+                
+                this.canvas.style.cursor = this.selectedTool ? 'crosshair' : 'default';
+            }
+
+            getCanvasWrapperCoordinates(event) {
+                const rect = this.canvasWrapper.getBoundingClientRect();
+                return {
+                    x: event.clientX - rect.left,
+                    y: event.clientY - rect.top
+                };
+            }
+
+            handleMouseDown(e) {
+                if (!this.selectedTool || e.target !== this.canvas) return;
+                this.isDrawing = true;
+                this.startPos = this.getCanvasWrapperCoordinates(e);
+
+                this.selectionBox = document.createElement('div');
+                this.selectionBox.className = 'selection-box';
+                this.selectionBox.style.left = `${this.startPos.x}px`;
+                this.selectionBox.style.top = `${this.startPos.y}px`;
+                
+                this.canvasWrapper.appendChild(this.selectionBox);
+            }
+
+            handleMouseMove(e) {
+                if (!this.isDrawing) return;
+                
+                const currentPos = this.getCanvasWrapperCoordinates(e);
+                const x = Math.min(this.startPos.x, currentPos.x);
+                const y = Math.min(this.startPos.y, currentPos.y);
+                const width = Math.abs(this.startPos.x - currentPos.x);
+                const height = Math.abs(this.startPos.y - currentPos.y);
+
+                this.selectionBox.style.left = `${x}px`;
+                this.selectionBox.style.top = `${y}px`;
+                this.selectionBox.style.width = `${width}px`;
+                this.selectionBox.style.height = `${height}px`;
+            }
+
+            handleMouseUp(e) {
+                if (!this.isDrawing) return;
+                this.isDrawing = false;
+                
+                const finalRect = {
+                    x: parseInt(this.selectionBox.style.left, 10),
+                    y: parseInt(this.selectionBox.style.top, 10),
+                    width: parseInt(this.selectionBox.style.width, 10),
+                    height: parseInt(this.selectionBox.style.height, 10),
+                };
+
+                this.canvasWrapper.removeChild(this.selectionBox);
+                this.selectionBox = null;
+
+                if (finalRect.width > 5 && finalRect.height > 5) { // Minimum size
+                    const field = {
+                        id: `field-${this.fieldCounter++}`,
+                        type: this.selectedTool,
+                        page: this.currentPage,
+                        ...finalRect
+                    };
+                    this.fields.push(field);
+                    this.renderFieldsForCurrentPage();
+                }
+            }
+
+            renderFieldsForCurrentPage() {
+                document.querySelectorAll('.field-overlay').forEach(el => el.remove());
+                this.fields
+                    .filter(field => field.page === this.currentPage)
+                    .forEach(field => this.createFieldOverlay(field));
+            }
+
+            createFieldOverlay(field) {
+                const overlay = document.createElement('div');
+                overlay.className = 'field-overlay';
+                overlay.dataset.fieldId = field.id;
+                overlay.style.left = `${field.x}px`;
+                overlay.style.top = `${field.y}px`;
+                overlay.style.width = `${field.width}px`;
+                overlay.style.height = `${field.height}px`;
+
+                const label = document.createElement('div');
+                label.className = 'field-label';
+                label.textContent = this.getFieldTypeLabel(field.type);
+                overlay.appendChild(label);
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.innerHTML = '&times;';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    this.deleteField(field.id);
+                };
+                overlay.appendChild(deleteBtn);
+
+                this.canvasWrapper.appendChild(overlay);
+            }
+
+            deleteField(fieldId) {
+                this.fields = this.fields.filter(f => f.id !== fieldId);
+                this.renderFieldsForCurrentPage();
+            }
+
+            getFieldTypeLabel(type) {
+                const labels = {
+                    text: 'Text Field',
+                    checkbox: 'Checkbox',
+                    radioGroup: 'Radio Group',
+                    signature: 'Signature',
+                    image: 'Image Field'
+                };
+                return labels[type] || 'Field';
+            }
+
+            // --- PDF Generation and Download (REVISED) ---
+
             async downloadPDF() {
                 if (!this.pdfDoc || this.fields.length === 0) {
-                    this.showStatus('Please add some form fields before downloading.', 'error');
+                    this.showStatus('No fields to add. Please draw a field first.', 'error');
                     return;
                 }
-                
+
+                this.showStatus('Creating interactive PDF...', 'info');
+                this.downloadBtn.disabled = true;
+
                 try {
-                    this.showStatus('Generating fillable PDF...', 'info');
+                    const { PDFDocument, rgb, StandardFonts } = PDFLib;
                     
-                    // Get the original PDF data
+                    // Use the robust method to get the raw PDF data
                     const existingPdfBytes = await this.pdfDoc.getData();
-                    const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
-                    const form = pdfDoc.getForm();
-                    
-                    // Add fields to PDF
+                    // Load this data into pdf-lib
+                    const pdfDoc = await PDFDocument.load(existingPdfBytes);
+
+                    const pages = pdfDoc.getPages();
+                    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
                     for (const field of this.fields) {
-                        const page = pdfDoc.getPage(field.page - 1);
-                        const { height: pageHeight } = page.getSize();
+                        const page = pages[field.page - 1];
+                        const { width: pageWidth, height: pageHeight } = page.getSize();
                         
                         // Convert canvas coordinates to PDF coordinates
-                        const pdfX = field.x / this.scale;
-                        const pdfY = pageHeight - (field.y / this.scale) - (field.height / this.scale);
+                        const pdfX = (field.x / this.scale);
+                        const pdfY = pageHeight - ((field.y + field.height) / this.scale);
                         const pdfWidth = field.width / this.scale;
                         const pdfHeight = field.height / this.scale;
                         
-                        const fieldName = `${field.type}_${field.id}`;
-                        
-                        try {
-                            switch (field.type) {
-                                case 'text':
-                                    const textField = form.createTextField(fieldName);
-                                    textField.addToPage(page, {
-                                        x: pdfX,
-                                        y: pdfY,
-                                        width: pdfWidth,
-                                        height: pdfHeight,
-                                        borderColor: PDFLib.rgb(0.7, 0.7, 0.7),
-                                        borderWidth: 1
-                                    });
-                                    break;
-                                    
-                                case 'checkbox':
-                                    const checkBox = form.createCheckBox(fieldName);
-                                    checkBox.addToPage(page, {
-                                        x: pdfX,
-                                        y: pdfY,
-                                        width: Math.min(pdfWidth, pdfHeight),
-                                        height: Math.min(pdfWidth, pdfHeight),
-                                        borderColor: PDFLib.rgb(0.7, 0.7, 0.7),
-                                        borderWidth: 1
-                                    });
-                                    break;
-                                    
-                                case 'radio':
-                                    const radioGroup = form.createRadioGroup(fieldName);
-                                    radioGroup.addOptionToPage(`${fieldName}_option`, page, {
-                                        x: pdfX,
-                                        y: pdfY,
-                                        width: Math.min(pdfWidth, pdfHeight),
-                                        height: Math.min(pdfWidth, pdfHeight),
-                                        borderColor: PDFLib.rgb(0.7, 0.7, 0.7),
-                                        borderWidth: 1
-                                    });
-                                    break;
-                                    
-                                case 'date':
-                                    const dateField = form.createTextField(fieldName);
-                                    dateField.addToPage(page, {
-                                        x: pdfX,
-                                        y: pdfY,
-                                        width: pdfWidth,
-                                        height: pdfHeight,
-                                        borderColor: PDFLib.rgb(0.7, 0.7, 0.7),
-                                        borderWidth: 1
-                                    });
-                                    break;
-                                    
-                                case 'signature':
-                                    const sigField = form.createTextField(fieldName);
-                                    sigField.addToPage(page, {
-                                        x: pdfX,
-                                        y: pdfY,
-                                        width: pdfWidth,
-                                        height: pdfHeight,
-                                        borderColor: PDFLib.rgb(0.7, 0.7, 0.7),
-                                        borderWidth: 1
-                                    });
-                                    break;
-                                    
-                                case 'image':
-                                    const imgField = form.createTextField(fieldName);
-                                    imgField.addToPage(page, {
-                                        x: pdfX,
-                                        y: pdfY,
-                                        width: pdfWidth,
-                                        height: pdfHeight,
-                                        borderColor: PDFLib.rgb(0.7, 0.7, 0.7),
-                                        borderWidth: 1
-                                    });
-                                    break;
-                            }
-                        } catch (fieldError) {
-                            console.warn(`Error creating field ${fieldName}:`, fieldError);
+                        const form = pdfDoc.getForm();
+
+                        switch (field.type) {
+                            case 'text':
+                                const textField = form.createTextField(field.id);
+                                textField.setText('');
+                                textField.addToPage(page, { x: pdfX, y: pdfY, width: pdfWidth, height: pdfHeight, font, borderWidth: 1, borderColor: rgb(0.5, 0.5, 0.5) });
+                                break;
+                            case 'checkbox':
+                                const checkBox = form.createCheckBox(field.id);
+                                checkBox.addToPage(page, { x: pdfX, y: pdfY, width: pdfWidth, height: pdfHeight, borderWidth: 1, borderColor: rgb(0.5, 0.5, 0.5) });
+                                break;
+                            case 'radioGroup':
+                                const radioGroup = form.createRadioGroup(field.id);
+                                radioGroup.addOptionToPage('Option1', page, { x: pdfX, y: pdfY, width: pdfWidth, height: pdfHeight, borderWidth: 1, borderColor: rgb(0.5, 0.5, 0.5) });
+                                break;
+                            case 'signature':
+                                const signatureField = form.createSignature(field.id);
+                                signatureField.addToPage(page, { x: pdfX, y: pdfY, width: pdfWidth, height: pdfHeight, borderWidth: 1, borderColor: rgb(0.5, 0.5, 0.5) });
+                                break;
+                            case 'image':
+                                const imageButton = form.createButton(field.id);
+                                // **FINAL FIX**: Simplified the button creation to its most basic, robust form.
+                                // Removed the caption and font properties which can cause conflicts.
+                                imageButton.addToPage(page, { 
+                                    x: pdfX, 
+                                    y: pdfY, 
+                                    width: pdfWidth, 
+                                    height: pdfHeight,
+                                    borderWidth: 1, 
+                                    borderColor: rgb(0.5, 0.5, 0.5) 
+                                });
+                                imageButton.onPush(pdfDoc.createJavaScript('event.target.buttonImportIcon();'));
+                                break;
                         }
                     }
-                    
-                    // Save and download
+
                     const pdfBytes = await pdfDoc.save();
                     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = 'interactive_form.pdf';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
                     
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'fillable-form.pdf';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                    
-                    this.showStatus('Fillable PDF downloaded successfully!', 'success');
+                    this.showStatus('PDF created successfully!', 'success');
                 } catch (error) {
-                    console.error('Error generating PDF:', error);
-                    this.showStatus('Error generating PDF. Please try again.', 'error');
+                    console.error('Error creating PDF:', error);
+                    this.showStatus('An error occurred while creating the PDF.', 'error');
+                } finally {
+                    this.downloadBtn.disabled = false;
                 }
             }
-            
-            showStatus(message, type) {
-                const statusDiv = document.getElementById('status');
-                statusDiv.className = `status ${type}`;
-                statusDiv.textContent = message;
-                
-                if (type === 'success' || type === 'error') {
-                    setTimeout(() => {
-                        statusDiv.textContent = '';
-                        statusDiv.className = '';
-                    }, 5000);
-                }
+
+            // --- UI Helpers ---
+
+            showStatus(message, type = 'info') {
+                const statusEl = document.getElementById('status');
+                statusEl.textContent = message;
+                statusEl.className = `status ${type}`;
+                statusEl.style.display = 'block';
             }
         }
-        
-        // Initialize the application
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-        
-        document.addEventListener('DOMContentLoaded', () => {
+
+        // Initialize the app once the DOM is loaded
+        window.addEventListener('DOMContentLoaded', () => {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
             new PDFFormBuilder();
         });
     </script>
